@@ -44,10 +44,32 @@ class RoleRelationManager extends RelationManager
             ->columns([
                 TextColumn::make('name')
                     ->searchable()
-                    ->label(__('filament-spatie-roles-permissions::filament-spatie.field.name')),
+                    ->label(__('filament-spatie-roles-permissions::filament-spatie.field.name'))
+                    ->badge()
+                    ->color(fn(string $state): string => match ($state) {
+                        'Super Admin' => 'danger',
+                        'Admin' => 'warning',
+                        'Manager' => 'success',
+                        'Editor' => 'gray',
+                    })
+                    ->icon(fn(string $state): string => match ($state) {
+                        'Super Admin' => 'heroicon-o-shield-check',
+                        'Admin' => 'heroicon-o-cog',
+                        'Manager' => 'heroicon-o-circle-stack',
+                        'Editor' => 'heroicon-o-pencil-square',
+                    }),
                 TextColumn::make('guard_name')
                     ->searchable()
-                    ->label(__('filament-spatie-roles-permissions::filament-spatie.field.guard_name')),
+                    ->label(__('filament-spatie-roles-permissions::filament-spatie.field.guard_name'))
+                    ->badge()
+                    ->color(fn(string $state): string => match ($state) {
+                        'web' => 'success',
+                        'api' => 'warning',
+                    })
+                    ->icon(fn(string $state): string => match ($state) {
+                        'web' => 'heroicon-o-globe-americas',
+                        'api' => 'heroicon-o-bolt',
+                    }),
             ])
             ->filters([
                 //

@@ -25,13 +25,13 @@ use Illuminate\Database\Eloquent\Model;
 
 class RoleResource extends Resource
 {
-    
-    
+
+
     public static function isScopedToTenant(): bool
     {
         return config('filament-spatie-roles-permissions.scope_to_tenant', true);
     }
-    
+
     public static function getNavigationIcon(): ?string
     {
         return  config('filament-spatie-roles-permissions.icons.role_navigation');
@@ -71,7 +71,9 @@ class RoleResource extends Resource
     {
         return $form
             ->schema([
-                Section::make()
+                Section::make('Role Attributes')
+                    ->description('Please complete general role information')
+                    ->aside()
                     ->schema([
                         Grid::make(2)
                             ->schema([
@@ -109,7 +111,7 @@ class RoleResource extends Resource
                                     ->label(__('filament-spatie-roles-permissions::filament-spatie.field.team'))
                                     ->hidden(fn () => ! config('permission.teams', false) || Filament::hasTenancy())
                                     ->options(
-                                        fn () => config('filament-spatie-roles-permissions.team_model', App\Models\Team::class)::pluck('name', 'id')
+                                        fn () => config('filament-spatie-roles-permissions.team_model', \App\Models\Team::class)::pluck('name', 'id')
                                     )
                                     ->dehydrated(fn ($state) => (int) $state > 0)
                                     ->placeholder(__('filament-spatie-roles-permissions::filament-spatie.select-team'))
@@ -128,7 +130,20 @@ class RoleResource extends Resource
                     ->searchable(),
                 TextColumn::make('name')
                     ->label(__('filament-spatie-roles-permissions::filament-spatie.field.name'))
-                    ->searchable(),
+                    ->searchable()
+                    ->badge()
+                    ->color(fn(string $state): string => match ($state) {
+                        'Super Admin' => 'danger',
+                        'Admin' => 'warning',
+                        'Manager' => 'success',
+                        'Editor' => 'gray',
+                    })
+                    ->icon(fn(string $state): string => match ($state) {
+                        'Super Admin' => 'heroicon-o-shield-check',
+                        'Admin' => 'heroicon-o-cog',
+                        'Manager' => 'heroicon-o-circle-stack',
+                        'Editor' => 'heroicon-o-pencil-square',
+                    }),
                 TextColumn::make('permissions_count')
                     ->counts('permissions')
                     ->label(__('filament-spatie-roles-permissions::filament-spatie.field.permissions_count'))
@@ -136,7 +151,16 @@ class RoleResource extends Resource
                 TextColumn::make('guard_name')
                     ->toggleable(isToggledHiddenByDefault: config('filament-spatie-roles-permissions.toggleable_guard_names.roles.isToggledHiddenByDefault', true))
                     ->label(__('filament-spatie-roles-permissions::filament-spatie.field.guard_name'))
-                    ->searchable(),
+                    ->searchable()
+                    ->badge()
+                    ->color(fn(string $state): string => match ($state) {
+                        'web' => 'success',
+                        'api' => 'warning',
+                    })
+                    ->icon(fn(string $state): string => match ($state) {
+                        'web' => 'heroicon-o-globe-americas',
+                        'api' => 'heroicon-o-bolt',
+                    }),
             ])
             ->filters([
 
@@ -144,6 +168,7 @@ class RoleResource extends Resource
             ->actions([
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\ViewAction::make(),
+                Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

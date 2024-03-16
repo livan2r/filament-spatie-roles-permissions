@@ -113,11 +113,27 @@ class PermissionResource extends Resource
                     ->searchable(),
                 TextColumn::make('name')
                     ->label(__('filament-spatie-roles-permissions::filament-spatie.field.name'))
-                    ->searchable(),
+                    ->searchable()
+                    ->badge()
+                    ->color(fn(string $state): string => match (explode(' ', $state)[0]) {
+                        'view-any', 'view' => 'success',
+                        'create', 'update', 'reorder' => 'warning',
+                        'delete', 'force-delete' => 'danger',
+                        default => 'gray',
+                    }),
                 TextColumn::make('guard_name')
                     ->toggleable(isToggledHiddenByDefault: config('filament-spatie-roles-permissions.toggleable_guard_names.permissions.isToggledHiddenByDefault', true))
                     ->label(__('filament-spatie-roles-permissions::filament-spatie.field.guard_name'))
-                    ->searchable(),
+                    ->searchable()
+                    ->badge()
+                    ->color(fn(string $state): string => match ($state) {
+                        'web' => 'success',
+                        'api' => 'warning',
+                    })
+                    ->icon(fn(string $state): string => match ($state) {
+                        'web' => 'heroicon-o-globe-americas',
+                        'api' => 'heroicon-o-bolt',
+                    }),
             ])
             ->filters([
                 SelectFilter::make('models')
@@ -150,9 +166,16 @@ class PermissionResource extends Resource
 
                         return $query;
                     }),
+                SelectFilter::make('guard_name')
+                    ->label('Guard')
+                    ->options([
+                        'web' => 'Web',
+                        'api' => 'Api',
+                    ])
             ])->actions([
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\ViewAction::make(),
+                Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

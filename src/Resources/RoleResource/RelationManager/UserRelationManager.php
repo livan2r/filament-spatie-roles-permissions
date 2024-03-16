@@ -7,6 +7,7 @@ use Filament\Forms\Form;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables\Actions\AttachAction;
 use Filament\Tables\Actions\DetachAction;
+use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
@@ -56,6 +57,26 @@ class UserRelationManager extends RelationManager
                 TextColumn::make(config('filament-spatie-roles-permissions.user_name_column'))
                     ->label(__('filament-spatie-roles-permissions::filament-spatie.field.name'))
                     ->searchable(),
+                TextColumn::make('email')
+                    ->searchable()
+                    ->icon('heroicon-m-envelope')
+                    ->iconColor('primary'),
+                IconColumn::make('verified')
+                    ->boolean(),
+                TextColumn::make('roles.name')
+                    ->badge()
+                    ->color(fn(string $state): string => match ($state) {
+                        'Super Admin' => 'danger',
+                        'Admin' => 'warning',
+                        'Manager' => 'success',
+                        'Editor' => 'gray',
+                    })
+                    ->icon(fn(string $state): string => match ($state) {
+                        'Super Admin' => 'heroicon-o-shield-check',
+                        'Admin' => 'heroicon-o-cog',
+                        'Manager' => 'heroicon-o-circle-stack',
+                        'Editor' => 'heroicon-o-pencil-square',
+                    }),
             ])
             ->filters([
 

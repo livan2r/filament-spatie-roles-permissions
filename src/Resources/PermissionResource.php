@@ -100,7 +100,8 @@ class PermissionResource extends Resource
                                 )
                                 ->preload(config('filament-spatie-roles-permissions.preload_roles', true)),
                         ]),
-                    ]),
+                    ])
+                    ->compact(),
             ]);
     }
 

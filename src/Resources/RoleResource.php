@@ -117,7 +117,8 @@ class RoleResource extends Resource
                                     ->placeholder(__('filament-spatie-roles-permissions::filament-spatie.select-team'))
                                     ->hint(__('filament-spatie-roles-permissions::filament-spatie.select-team-hint')),
                             ]),
-                    ]),
+                    ])
+                    ->compact(),
             ]);
     }
 

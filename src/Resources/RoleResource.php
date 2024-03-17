@@ -14,6 +14,7 @@ use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
+use Filament\Forms;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
@@ -26,6 +27,7 @@ use Illuminate\Database\Eloquent\Model;
 class RoleResource extends Resource
 {
 
+    protected static ?string $recordTitleAttribute = 'name';
 
     public static function isScopedToTenant(): bool
     {
@@ -71,55 +73,28 @@ class RoleResource extends Resource
     {
         return $form
             ->schema([
-                Section::make('Role Attributes')
-                    ->description('Please complete general role information')
-                    ->aside()
+                Forms\Components\Group::make()
                     ->schema([
-                        Grid::make(2)
-                            ->schema([
-                                TextInput::make('name')
-                                    ->label(__('filament-spatie-roles-permissions::filament-spatie.field.name'))
-                                    ->required()
-                                    ->unique(ignoreRecord: true, modifyRuleUsing: function (Unique $rule) {
-                                        // If using teams and Tenancy, ensure uniqueness against current tenant
-                                        if(config('permission.teams', false) && Filament::hasTenancy()) {
-                                            // Check uniqueness against current user/team
-                                            $rule->where(config('permission.column_names.team_foreign_key', 'team_id'), Filament::getTenant()->id);
-                                        }
-                                        return $rule;
-                                    }),
-
-                                Select::make('guard_name')
-                                    ->label(__('filament-spatie-roles-permissions::filament-spatie.field.guard_name'))
-                                    ->options(config('filament-spatie-roles-permissions.guard_names'))
-                                    ->default(config('filament-spatie-roles-permissions.default_guard_name'))
-                                    ->required(),
-
-                                Select::make('permissions')
-                                    ->columnSpanFull()
-                                    ->multiple()
-                                    ->label(__('filament-spatie-roles-permissions::filament-spatie.field.permissions'))
-                                    ->relationship(
-                                        name: 'permissions',
-                                        modifyQueryUsing: fn (Builder $query) => $query->orderBy('name'),
-                                    )
-                                    ->getOptionLabelFromRecordUsing(fn (Model $record) => "{$record->name} ({$record->guard_name})")
-                                    ->searchable(['name', 'guard_name']) // searchable on both name and guard_name
-                                    ->preload(config('filament-spatie-roles-permissions.preload_permissions')),
-
-                                Select::make(config('permission.column_names.team_foreign_key', 'team_id'))
-                                    ->label(__('filament-spatie-roles-permissions::filament-spatie.field.team'))
-                                    ->hidden(fn () => ! config('permission.teams', false) || Filament::hasTenancy())
-                                    ->options(
-                                        fn () => config('filament-spatie-roles-permissions.team_model', \App\Models\Team::class)::pluck('name', 'id')
-                                    )
-                                    ->dehydrated(fn ($state) => (int) $state > 0)
-                                    ->placeholder(__('filament-spatie-roles-permissions::filament-spatie.select-team'))
-                                    ->hint(__('filament-spatie-roles-permissions::filament-spatie.select-team-hint')),
-                            ]),
+                        Forms\Components\Section::make()
+                            ->schema(static::getDetailsFormSchema())
+                            ->columns(2),
                     ])
-                    ->compact(),
-            ]);
+                    ->columnSpan(['lg' => fn (?Role $record) => $record === null ? 3 : 2]),
+
+                Forms\Components\Section::make()
+                    ->schema([
+                        Forms\Components\Placeholder::make('created_at')
+                            ->label('Created at')
+                            ->content(fn (Role $record): ?string => $record->created_at?->diffForHumans()),
+
+                        Forms\Components\Placeholder::make('updated_at')
+                            ->label('Last modified at')
+                            ->content(fn (Role $record): ?string => $record->updated_at?->diffForHumans()),
+                    ])
+                    ->columnSpan(['lg' => 1])
+                    ->hidden(fn (?Role $record) => $record === null),
+            ])
+            ->columns(3);
     }
 
     public static function table(Table $table): Table
@@ -196,6 +171,51 @@ class RoleResource extends Resource
             'create' => CreateRole::route('/create'),
             'edit' => EditRole::route('/{record}/edit'),
             'view' => ViewRole::route('/{record}'),
+        ];
+    }
+
+    public static function getDetailsFormSchema(): array
+    {
+        return [
+            TextInput::make('name')
+                ->label(__('filament-spatie-roles-permissions::filament-spatie.field.name'))
+                ->required()
+                ->unique(ignoreRecord: true, modifyRuleUsing: function (Unique $rule) {
+                    // If using teams and Tenancy, ensure uniqueness against current tenant
+                    if(config('permission.teams', false) && Filament::hasTenancy()) {
+                        // Check uniqueness against current user/team
+                        $rule->where(config('permission.column_names.team_foreign_key', 'team_id'), Filament::getTenant()->id);
+                    }
+                    return $rule;
+                }),
+
+            Select::make('guard_name')
+                ->label(__('filament-spatie-roles-permissions::filament-spatie.field.guard_name'))
+                ->options(config('filament-spatie-roles-permissions.guard_names'))
+                ->default(config('filament-spatie-roles-permissions.default_guard_name'))
+                ->required(),
+
+            Select::make('permissions')
+                ->columnSpanFull()
+                ->multiple()
+                ->label(__('filament-spatie-roles-permissions::filament-spatie.field.permissions'))
+                ->relationship(
+                    name: 'permissions',
+                    modifyQueryUsing: fn (Builder $query) => $query->orderBy('name'),
+                )
+                ->getOptionLabelFromRecordUsing(fn (Model $record) => "{$record->name} ({$record->guard_name})")
+                ->searchable(['name', 'guard_name']) // searchable on both name and guard_name
+                ->preload(config('filament-spatie-roles-permissions.preload_permissions')),
+
+            Select::make(config('permission.column_names.team_foreign_key', 'team_id'))
+                ->label(__('filament-spatie-roles-permissions::filament-spatie.field.team'))
+                ->hidden(fn () => ! config('permission.teams', false) || Filament::hasTenancy())
+                ->options(
+                    fn () => config('filament-spatie-roles-permissions.team_model', \App\Models\Team::class)::pluck('name', 'id')
+                )
+                ->dehydrated(fn ($state) => (int) $state > 0)
+                ->placeholder(__('filament-spatie-roles-permissions::filament-spatie.select-team'))
+                ->hint(__('filament-spatie-roles-permissions::filament-spatie.select-team-hint')),
         ];
     }
 }

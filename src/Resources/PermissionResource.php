@@ -15,6 +15,7 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
+use Filament\Forms;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Actions\BulkAction;
@@ -65,7 +66,37 @@ class PermissionResource extends Resource
         return __('filament-spatie-roles-permissions::filament-spatie.section.permissions');
     }
 
+    protected static ?string $recordTitleAttribute = 'name';
+
     public static function form(Form $form): Form
+    {
+        return $form
+            ->schema([
+                Forms\Components\Group::make()
+                    ->schema([
+                        Forms\Components\Section::make()
+                            ->schema(static::getDetailsFormSchema())
+                            ->columns(2),
+                    ])
+                    ->columnSpan(['lg' => fn (?Permission $record) => $record === null ? 3 : 2]),
+
+                Forms\Components\Section::make()
+                    ->schema([
+                        Forms\Components\Placeholder::make('created_at')
+                            ->label('Created at')
+                            ->content(fn (Permission $record): ?string => $record->created_at?->diffForHumans()),
+
+                        Forms\Components\Placeholder::make('updated_at')
+                            ->label('Last modified at')
+                            ->content(fn (Permission $record): ?string => $record->updated_at?->diffForHumans()),
+                    ])
+                    ->columnSpan(['lg' => 1])
+                    ->hidden(fn (?Permission $record) => $record === null),
+            ])
+            ->columns(3);
+    }
+
+    public static function _form(Form $form): Form
     {
         return $form
             ->schema([
@@ -215,6 +246,40 @@ class PermissionResource extends Resource
             'create' => CreatePermission::route('/create'),
             'edit' => EditPermission::route('/{record}/edit'),
             'view' => ViewPermission::route('/{record}'),
+        ];
+    }
+
+    public static function getDetailsFormSchema(): array
+    {
+        return [
+            TextInput::make('name')
+                ->label(__('filament-spatie-roles-permissions::filament-spatie.field.name'))
+                ->required()
+                ->columnSpanFull(),
+            Select::make('guard_name')
+                ->label(__('filament-spatie-roles-permissions::filament-spatie.field.guard_name'))
+                ->options(config('filament-spatie-roles-permissions.guard_names'))
+                ->default(config('filament-spatie-roles-permissions.default_guard_name'))
+                ->live()
+                ->afterStateUpdated(fn (Set $set) => $set('roles', null))
+                ->required(),
+            Select::make('roles')
+                ->multiple()
+                ->label(__('filament-spatie-roles-permissions::filament-spatie.field.roles'))
+                ->relationship(
+                    name: 'roles',
+                    titleAttribute: 'name',
+                    modifyQueryUsing: function(Builder $query, Get $get) {
+                        if (!empty($get('guard_name'))) {
+                            $query->where('guard_name', $get('guard_name'));
+                        }
+                        if(Filament::hasTenancy()) {
+                            return $query->where(config('permission.column_names.team_foreign_key'), Filament::getTenant()->id);
+                        }
+                        return $query;
+                    }
+                )
+                ->preload(config('filament-spatie-roles-permissions.preload_roles', true)),
         ];
     }
 }

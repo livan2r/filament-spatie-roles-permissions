@@ -96,46 +96,6 @@ class PermissionResource extends Resource
             ->columns(3);
     }
 
-    public static function _form(Form $form): Form
-    {
-        return $form
-            ->schema([
-                Section::make()
-                    ->schema([
-                        Grid::make(2)->schema([
-                            TextInput::make('name')
-                                ->label(__('filament-spatie-roles-permissions::filament-spatie.field.name'))
-                                ->required(),
-                            Select::make('guard_name')
-                                ->label(__('filament-spatie-roles-permissions::filament-spatie.field.guard_name'))
-                                ->options(config('filament-spatie-roles-permissions.guard_names'))
-                                ->default(config('filament-spatie-roles-permissions.default_guard_name'))
-                                ->live()
-                                ->afterStateUpdated(fn (Set $set) => $set('roles', null))
-                                ->required(),
-                            Select::make('roles')
-                                ->multiple()
-                                ->label(__('filament-spatie-roles-permissions::filament-spatie.field.roles'))
-                                ->relationship(
-                                    name: 'roles',
-                                    titleAttribute: 'name',
-                                    modifyQueryUsing: function(Builder $query, Get $get) {
-                                        if (!empty($get('guard_name'))) {
-                                            $query->where('guard_name', $get('guard_name'));
-                                        }
-                                        if(Filament::hasTenancy()) {
-                                            return $query->where(config('permission.column_names.team_foreign_key'), Filament::getTenant()->id);
-                                        }
-                                        return $query;
-                                    }
-                                )
-                                ->preload(config('filament-spatie-roles-permissions.preload_roles', true)),
-                        ]),
-                    ])
-                    ->compact(),
-            ]);
-    }
-
     public static function table(Table $table): Table
     {
         return $table
@@ -143,6 +103,7 @@ class PermissionResource extends Resource
                 TextColumn::make('id')
                     ->label('ID')
                     ->searchable(),
+
                 TextColumn::make('name')
                     ->label(__('filament-spatie-roles-permissions::filament-spatie.field.name'))
                     ->searchable()
@@ -153,6 +114,7 @@ class PermissionResource extends Resource
                         'delete', 'force-delete' => 'danger',
                         default => 'gray',
                     }),
+
                 TextColumn::make('guard_name')
                     ->toggleable(isToggledHiddenByDefault: config('filament-spatie-roles-permissions.toggleable_guard_names.permissions.isToggledHiddenByDefault', true))
                     ->label(__('filament-spatie-roles-permissions::filament-spatie.field.guard_name'))
@@ -166,6 +128,16 @@ class PermissionResource extends Resource
                         'web' => 'heroicon-o-globe-americas',
                         'api' => 'heroicon-o-bolt',
                     }),
+
+                Tables\Columns\TextColumn::make('created_at')
+                    ->dateTime()
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+
+                Tables\Columns\TextColumn::make('updated_at')
+                    ->dateTime()
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 SelectFilter::make('models')

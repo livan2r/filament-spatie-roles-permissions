@@ -104,6 +104,7 @@ class RoleResource extends Resource
                 TextColumn::make('id')
                     ->label('ID')
                     ->searchable(),
+
                 TextColumn::make('name')
                     ->label(__('filament-spatie-roles-permissions::filament-spatie.field.name'))
                     ->searchable()
@@ -120,10 +121,12 @@ class RoleResource extends Resource
                         'Manager' => 'heroicon-o-circle-stack',
                         'Editor' => 'heroicon-o-pencil-square',
                     }),
+
                 TextColumn::make('permissions_count')
                     ->counts('permissions')
                     ->label(__('filament-spatie-roles-permissions::filament-spatie.field.permissions_count'))
                     ->toggleable(isToggledHiddenByDefault: config('filament-spatie-roles-permissions.toggleable_guard_names.roles.isToggledHiddenByDefault', true)),
+
                 TextColumn::make('guard_name')
                     ->toggleable(isToggledHiddenByDefault: config('filament-spatie-roles-permissions.toggleable_guard_names.roles.isToggledHiddenByDefault', true))
                     ->label(__('filament-spatie-roles-permissions::filament-spatie.field.guard_name'))
@@ -137,6 +140,16 @@ class RoleResource extends Resource
                         'web' => 'heroicon-o-globe-americas',
                         'api' => 'heroicon-o-bolt',
                     }),
+
+                Tables\Columns\TextColumn::make('created_at')
+                    ->dateTime()
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+
+                Tables\Columns\TextColumn::make('updated_at')
+                    ->dateTime()
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
 

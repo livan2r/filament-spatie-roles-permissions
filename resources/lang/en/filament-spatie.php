@@ -29,4 +29,5 @@ return [
     'select-team' => 'Select a Team',
     'select-team-hint' => 'Leave blank for a global role',
     'section.users' => 'Users',
+    'section.management' => 'Management',
 ];

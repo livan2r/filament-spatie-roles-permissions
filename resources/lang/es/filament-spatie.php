@@ -29,4 +29,5 @@ return [
     'select-team' => 'Selecciona un Equipo',
     'select-team-hint' => 'Deja en blanco para un rol global',
     'section.users' => 'Usuarios',
+    'section.management' => 'Administración',
 ];
